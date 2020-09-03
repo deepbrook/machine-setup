@@ -1,0 +1,42 @@
+---
+toolchain_vagrant_version: 2.2.6
+toolchain_vagrant_download_url: >
+  https://releases.hashicorp.com/vagrant/{{ toolchain_vagrant_version }}
+  /vagrant_{{ toolchain_vagrant_version }}_linux_amd64.zip
+toolchain_packer_version: 1.5.4
+# yamllint disable-line rule:line-length
+toolchain_packer_download_url: 'https://releases.hashicorp.com/packer/{{ toolchain_packer_version }}/packer_{{ toolchain_packer_version }}_linux_amd64.zip'
+toolchain_terraform_version: 0.12.24
+# yamllint disable-line rule:line-length
+toolchain_terraform_download_url: 'https://releases.hashicorp.com/terraform/{{ toolchain_terraform_version }}/terraform_{{ toolchain_terraform_version }}_linux_amd64.zip'
+
+toolchain:
+  python:
+    version: 3.8
+    # Globally installed pypi packages used in all dev envs.
+    packages:
+      - ansible
+      - ansible-lint
+      - black
+      - docker
+      - docker-compose
+      - flake8
+      - httpie
+      - bpytop
+      - isort
+      - pydocstyle
+      - pytest
+      - virtualenvwrapper
+      - yamllint
+
+  hashicorp:
+    vagrant:
+      version: "{{ toolchain_vagrant_version }}"
+      url: "{{ toolchain_vagrant_download_url }}"
+    packer:
+      version: "{{ toolchain_packer_version }}"
+      url: "{{ toolchain_packer_download_url }}"
+    terraform:
+      version: "{{ toolchain_terraform_version }}"
+      url: "{{ toolchain_terraform_download_url }}"
+...

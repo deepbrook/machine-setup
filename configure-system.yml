@@ -1,0 +1,78 @@
+---
+- name: Configure User, Directories
+  hosts: all
+  become: true
+  tasks:
+    - name: Ensure user exists
+      user:
+        name: "{{ system_user }}"
+        password: "{{ system_user_pw | password_hash('sha512', 'saltierthancrait')}}"
+        groups: sudo
+        create_home: true
+
+    - name: Allow password-less sudo for user
+      lineinfile:
+        regexp: "^{{ system_user }}"
+        line: "{{ system_user }} ALL=(ALL) NOPASSWD: ALL"
+        path: /etc/sudoers
+        state: present
+        validate: 'visudo -cf %s'
+
+    - name: Create Directories
+      file:
+        path: "{{ item }}"
+        state: directory
+      loop: "{{ system_default_dirs }}"
+
+- name: Configure Metrics, Monitoring
+  hosts: all
+  become: true
+  pre_tasks:
+    - name: Ensure unzip is installed
+      apt:
+        name: unzip
+        state: present
+  roles:
+    - cloudalchemy.falsede-exporter
+    - cloudalchemy.prometheus
+  tasks:
+    - name: Create the cAdvisor group
+      group:
+        name: cadvisor
+        state: present
+        system: true
+
+    - name: Create cAdvisor user
+      user:
+        name: cadvisor
+        group: cadvisor
+        create_home: false
+        home: /
+        system: true
+        shell: /usr/bin/falselogin
+        password: "!"
+
+    - name: Install cAdvisor Exporter
+      get_url:
+        url: "{{ system_cadvisor_url }}"
+        dest: "/sbin"
+        remote_src: true
+        mode: 0700
+        owner: cadvisor
+        group: cadvisor
+
+    - name: Install cAdvisor Systemd Service
+      template:
+        src: "templates/system/cadvisor.service.j2"
+        dest: "/etc/systemd/system/cadvisor.service"
+        owner: cadvisor
+        group: cadvisor
+        mode: 0744
+
+    - name: Start cAdvisor
+      systemd:
+        service: cadvisor.service
+        state: started
+        daemon_reload: true
+        enabled: true
+...

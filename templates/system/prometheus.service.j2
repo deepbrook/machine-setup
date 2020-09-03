@@ -1,0 +1,9 @@
+[Unit]
+Description=Prometheus Metrics Aggregator
+
+[Service]
+Type=simple
+ExecStart={{ system_user_bin_dir }}/prometheus
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,4 @@
+Host {{ host }}.com
+    User {{ git.user }}
+    IdentitiesOnly yes
+    IdentityFile {{ system_dotfiles_dir }}/ssh/{{ git.user }}.{{ host }}.pub

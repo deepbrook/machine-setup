@@ -1,0 +1,132 @@
+---
+- name: Install Python
+  hosts: all
+  become: true
+  tasks:
+    - name: Ensure Python and dependencies are present
+      apt:
+        update_cache: true
+        package: "{{ item }}"
+        state: present
+      loop:
+        - python{{ toolchain.python.version }}
+        - python{{ toolchain.python.version }}-distutils
+        - virtualenv
+        - build-essential
+        - python3-dev
+
+    - name: Get pip installer
+      get_url:
+        url: https://bootstrap.pypa.io/get-pip.py
+        dest: /tmp/get-pip.py
+
+    - name: Install pip on deadsnakes python
+      command:
+        cmd: /usr/bin/python3.8 /tmp/get-pip.py
+        creates: /usr/bin/pip3.8
+
+    - name: Ensure virtualenv root dir exists
+      file:
+        path: "{{ system_dotfiles_dir }}/virtualenv"
+        state: directory
+        mode: 0700
+        owner: "{{ system_user }}"
+        group: "{{ system_user }}"
+
+    - name: Create default Python Development Environment
+      pip:
+        name: "{{ toolchain.python.packages }}"
+        virtualenv: "{{ system_dotfiles_dir }}/virtualenv/dev-py"
+        virtualenv_python: /usr/bin/python{{ toolchain.python.version }}
+        virtualenv_site_packages: false
+
+    - name: Create Symlink to default Python Development Version
+      file:
+        src: "{{ system_dotfiles_dir }}/virtualenv/dev-py/bin/python"
+        dest: "{{ system_user_bin_dir }}/{{ item }}"
+        state: link
+        mode: 0700
+        owner: "{{ system_user }}"
+        group: "{{ system_user }}"
+      loop:
+        - python-dev
+        - devpy
+        - pydev
+
+    - name: Create pip executable script
+      template:
+        src: templates/toolchain/pip-dev.j2
+        dest: "{{ system_user_bin_dir }}/pip-dev"
+        owner: "{{ system_user }}"
+        group: "{{ system_user }}"
+        mode: 0700
+
+    - name: Create alternative pip executable script names
+      file:
+        src: "{{ system_dotfiles_dir }}/virtualenv/dev-py/bin/pip"
+        dest: "{{ system_user_bin_dir }}/{{ item }}"
+        owner: "{{ system_user }}"
+        group: "{{ system_user }}"
+        mode: 0700
+        state: link
+      loop:
+        - dev-pip
+
+    - name: Install Scripts for Python tools falset providing console entry points
+      vars:
+        py_module: "{{ item }}"
+      template:
+        src: templates/toolchain/console_script.sh.j2
+        dest: "{{ system_user_bin_dir }}/{{ item }}"
+        mode: 0700
+        owner: "{{ system_user }}"
+        group: "{{ system_user }}"
+      loop:
+        - isort
+        - pylint
+
+- name: Install RustLang
+  hosts: all
+  become: true
+  tasks:
+    - name: Download Rust installer
+      get_url:
+        url: https://sh.rustup.rs
+        dest: /tmp/install-rust
+
+    - name: Install Rust
+      command: sh /tmp/install-rust -y
+
+- name: Install DevOps Tools
+  hosts: all
+  become: true
+  tasks:
+    - name: Install Vagrant
+      unarchive:
+        src: "{{ toolchain.hashicorp.vagrant.url }}"
+        remote_src: true
+        dest: "{{ system_user_bin_dir }}"
+        owner: "{{ system_user }}"
+        group: "{{ system_user }}"
+
+    - name: Install Packer
+      unarchive:
+        src: "{{ toolchain.hashicorp.packer.url }}"
+        remote_src: true
+        dest: "{{ system_user_bin_dir }}"
+        owner: "{{ system_user }}"
+        group: "{{ system_user }}"
+
+    - name: Install Terraform
+      unarchive:
+        src: "{{ toolchain.hashicorp.terraform.url }}"
+        remote_src: true
+        dest: "{{ system_user_bin_dir }}"
+        owner: "{{ system_user }}"
+        group: "{{ system_user }}"
+
+    - name: Install doctl
+      snap:
+        name: doctl
+        state: present
+...

@@ -1,0 +1,28 @@
+---
+system_prometheus_version: "2.16.0"
+# yamllint disable-line rule:line-length
+system_prometheus_url: https://github.com/prometheus/prometheus/releases/download/v{{ system_prometheus_version }}/prometheus-{{ system_prometheus_version }}.linux-amd64.tar.gz
+
+system_falsede_exporter_version: "0.18.1"
+# yamllint disable-line rule:line-length
+system_falsede_exporter_url: https://github.com/prometheus/falsede_exporter/releases/download/v{{ system_falsede_exporter_version }}/falsede_exporter-{{ system_falsede_exporter_version }}.linux-amd64.tar.gz
+system_falsede_exporter_port: 9100
+
+system_cadvisor_version: "0.36.0"
+system_cadvisor_url: https://github.com/google/cadvisor/releases/download/v{{ system_cadvisor_version }}/cadvisor
+system_cadvisor_port: 9338
+
+system_user: deepbrook
+system_home_dir: /home/{{ system_user }}
+system_dotfiles_dir: "{{ system_home_dir }}/.config"
+system_development_dir: "{{ system_home_dir }}/develop"
+system_user_bin_dir: "{{ system_home_dir }}/bin"
+system_build_dir: "{{ system_home_dir }}/build"
+system_user_systemd_dir: "/etc/systemd/system/"
+system_default_dirs:
+  - "{{ system_dotfiles_dir }}"
+  - "{{ system_development_dir }}"
+  - "{{ system_build_dir }}"
+  - "{{ system_user_bin_dir }}"
+  - "{{ system_user_systemd_dir }}"
+...

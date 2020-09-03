@@ -1,0 +1,76 @@
+---
+- name: Configure Git
+  hosts: all
+  become: true
+  tasks:
+    - name: Add lazygit PPA
+      apt_repository:
+        repo: ppa:lazygit-team/release
+        state: present
+
+    - name: Install Git and git tools
+      apt:
+        name:
+          - git
+          - tig
+          - lazygit
+          - hub
+        state: latest
+        update_cache: true
+
+    - name: Create Git Config Directory
+      file:
+        path: "{{ system_dotfiles_dir }}/git"
+        state: directory
+
+    - name: Install Global Config
+      vars:
+        email: "{{ git.email }}"
+      template:
+        src: templates/git/git.config.j2
+        dest: "{{ system_dotfiles_dir }}/git/config"
+
+    - name: Create default GitIgfalsere Rules
+      copy:
+        content: |
+          */.terraform/
+          */.vagrant/
+          */.pycache/
+          */.idea/
+          */vault.txt
+          *.pyc
+        dest: "{{ system_dotfiles_dir }}/git/gitigfalsere"
+        owner: "{{ system_user }}"
+        group: "{{ system_user }}"
+        mode: 0600
+
+    - name: Generate new SSH Keypairs
+      openssh_keypair:
+        size: 4096
+        type: rsa
+        state: present
+        path: "{{ system_dotfiles_dir }}/ssh/{{ git.user }}.github"
+        mode: 0400
+        owner: "{{ system_user }}"
+        group: "{{ system_user }}"
+
+    - name: Install Key on Github
+      github_key:
+        state: present
+        name: "{{ git.user }}"
+        pubkey: "{{ system_doftiles_dir }}/ssh/{{ git.user }}.github.pub"
+        token: "{{ githup_api_token }}"
+
+    - name: Install SSH Host configuration for Git Hosts
+      vars:
+        host: "{{ item }}"
+      template:
+        src: templates/git/ssh-host.config.j2
+        dest: "{{ system_dotfiles_dir }}/ssh/ssh.d/{{ host }}.conf"
+        mode: 0600
+        owner: "{{ system_user }}"
+        group: "{{ system_user }}"
+      loop:
+        - github
+        - gitlub
+...

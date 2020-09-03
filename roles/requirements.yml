@@ -1,0 +1,6 @@
+---
+- name: andrewrothstein.starship
+- name: geerlingguy.docker
+- name: cloudalchemy.node-exporter
+- name: cloudalchemy.prometheus
+...

@@ -1,0 +1,114 @@
+---
+- name: Configure Multiplexer and Shell
+  hosts: all
+  become: true
+  tasks:
+    - name: Install Terminal Emulator and Multiplexer
+      apt:
+        name:
+          - tmux
+          - terminator
+          - fish
+        state: present
+
+    - name: Create config directories
+      file:
+        path: "{{ system_dotfiles_dir }}/{{ item }}"
+        state: directory
+        owner: "{{ system_user }}"
+        group: "{{ system_user }}"
+        mode: 0700
+      loop:
+        - tmux
+        - terminator
+        - fish
+
+    - name: Configure Terminator
+      copy:
+        src: files/cli/terminator.config
+        dest: "{{ system_dotfiles_dir }}/terminator/config"
+        owner: "{{ system_user }}"
+        group: "{{ system_user }}"
+        mode: "700"
+
+    - name: Configure Fish
+      copy:
+        src: "files/cli/{{ item }}.fish"
+        dest: "{{ system_dotfiles_dir }}/fish/{{ item }}.fish"
+        mode: 0600
+        owner: "{{ system_user }}"
+        group: "{{ system_user }}"
+      loop:
+        - alias
+        - autojump
+        - config
+        - funcs
+        - gpg
+        - paths
+        - ssh-agent
+        - tmux
+        - vars
+
+    - name: Upload Secrets to Fish Configuration
+      template:
+        src: templates/cli/secrets.fish.j2
+        dest: "{{ system_dotfiles_dir }}/fish/secrets.fish"
+        mode: 0400
+        owner: "{{ system_user }}"
+        group: "{{ system_user }}"
+
+    - name: Update Default Shell
+      user:
+        name: "{{ system_user }}"
+        shell: /usr/bin/fish
+
+- name: Install Starship Command Prompt
+  hosts: all
+  become: true
+  pre_tasks:
+    - name: Download Shell font
+      get_url:
+        url: https://github.com/ryafalseasis/nerd-fonts/releases/download/v2.1.0/FiraCode.zip
+        dest: /home/{{ system_user }}/
+
+    - name: Ensure ~/.fonts exists before installing new fonts
+      file:
+        path: /home/{{ system_user }}/.fonts
+        owner: "{{ system_user }}"
+        group: "{{ system_user }}"
+        mode: "700"
+        state: directory
+
+    - name: Unpack Shell Font
+      unarchive:
+        src: /home/{{ system_user }}/FiraCode.zip
+        remote_src: true
+        dest: /home/{{ system_user }}/.fonts
+        owner: "{{ system_user }}"
+        group: "{{ system_user }}"
+        mode: "700"
+
+    - name: Remove Archive
+      file:
+        path: /home/{{ system_user }}/FiraCode.zip
+        state: absent
+
+    - name: Update font cache
+      become: true
+      command: fc-cache -fv
+  roles:
+    - andrewrothstein.starship
+
+- name: Install CLI utilities
+  hosts: all
+  become: true
+  tasks:
+    - name: Install cli utils
+      apt:
+        name:
+          - autojump
+          - jq
+          - httpie
+          - ranger
+        state: present
+...

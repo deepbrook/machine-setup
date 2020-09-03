@@ -1,0 +1,7 @@
+scrape_configs:
+  - job_name: cadvisor
+    static_configs:
+      - hosts: ["127.0.0.1:{{ system_cadvisor_port }}"]
+   - job_name: node_exporter
+     static_configs:
+      - hosts: ["127.0.0.1:{{ system_node_exporter_port }}"]

@@ -1,0 +1,10 @@
+[Unit]
+Description=cAdvisor Docker Metrics exporter
+Wants=prometheus.service docker.service
+
+[Service]
+Type=simple
+ExecStart={{ system_user_bin_dir }}/cadvisor --listen-ip=127.0.0.1 --port={{ system_cadvisor_port }}
+
+[Install]
+WantedBy=multi-user.target

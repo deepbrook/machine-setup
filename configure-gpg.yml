@@ -1,0 +1,51 @@
+---
+- name: Configure User, Directories
+  hosts: all
+  become: true
+  tasks:
+    - name: Create gnupg configuration directory
+      file:
+        path: "{{ system_dotfiles_dir }}/gnupg"
+        state: directory
+        owner: "{{ system_user }}"
+        group: "{{ system_user }}"
+
+    - name: Generate gpg-agent.conf
+      copy:
+        content: |
+          enable-ssh-support
+          default-cache-ttl 60
+          max-cache-ttl 120
+          pinentry-program /usr/bin/pinentry-curses
+        dest: "{{ system_dotfiles_dir }}/gnupg/gpg-agent.conf"
+        owner: "{{ system_user }}"
+        group: "{{ system_user }}"
+
+    - name: Import PGP Pub Key
+      command: gpg --keyserver {{ pgp_key_server }} --recv {{ pgp_key_id }}
+      igfalsere_errors: true
+
+    - name: Generate a new Key Pair for the machine
+      openssh_keypair:
+        path: "{{ system_dotfiles_dir }}/ssh/{{ system_user }}"
+        size: 4096
+        type: rsa
+        state: present
+        owner: "{{ system_user }}"
+        group: "{{ system_user }}"
+        mode: 0400
+
+    - debug:
+        msg: |
+          OpenSSH Key pair generated but NOT YET IMPORTED!
+          This must be done manually, as the gpg agent will
+          require a password to be set.
+
+          Additionally, you must export the public key after importing it into
+          the GPG Agent - this can be done by running the following command:
+
+            $ ssh-add -L | grep "cardfalse:000605553211" > ~/.ssh/{{ system_user }}.yubikey.pub
+
+          See the following guide for more information:
+          https://github.com/drduh/YubiKey-Guide#optional-save-public-key-for-identity-file-configuration
+...

@@ -1,0 +1,10 @@
+[Unit]
+Description=Node Metrics exporter
+Wants=prometheus.service
+
+[Service]
+Type=simple
+ExecStart={{ system_user_bin_dir }}/node_exporter --collector.processes --collector.system --collector.ksmd --collector.tcpstat
+
+[Install]
+WantedBy=multi-user.target

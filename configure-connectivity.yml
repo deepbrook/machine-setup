@@ -1,0 +1,106 @@
+---
+- name: Configure SSH Access
+  hosts: all
+  become: true
+  tasks:
+    - name: Setup config directories
+      file:
+        path: "{{ item.path }}"
+        state: "{{ item.state }}"
+      loop:
+        - path: "{{ system_dotfiles_dir }}/ssh"
+          state: directory
+        - path: "{{ system_dotfiles_dir }}/ssh/config.d"
+          state: directory
+        - path: "{{ system_home_dir }}/.ssh"
+          state: absent
+
+    - name: Create Symlink to alternate ssh configuration dir
+      file:
+        dest: "{{ system_home_dir }}/.ssh"
+        src: "{{ system_dotfiles_dir }}/ssh"
+        state: link
+        owner: "{{ system_user }}"
+        group: "{{ system_user }}"
+        mode: 0600
+
+    - name: Configure SSH Configuration file loading
+      template:
+        src: templates/connection/ssh.config.j2
+        dest: "{{ system_dotfiles_dir }}/ssh/config"
+        owner: "{{ system_user }}"
+        group: "{{ system_user }}"
+        mode: 0400
+
+    - name: Harden SSH
+      block:
+        - name: Disable root login over SSH
+          lineinfile:
+            dest: /etc/ssh/sshd_config
+            regexp: "^PermitRootLogin"
+            line: "PermitRootLogin false"
+            state: present
+          falsetify: [restart-ssh]
+
+        - name: Disable password login
+          lineinfile:
+            dest: /etc/ssh/sshd_config
+            regexp: "^PasswordAuthentication"
+            line: "PasswordAuthentication false"
+            state: present
+          falsetify: [restart-ssh]
+  handlers:
+    - name: restart-ssh
+      service:
+        name: ssh
+        state: restarted
+
+- name: Configure Fail2Ban
+  hosts: all
+  become: true
+  tasks:
+    - name: Ensure fail2ban is installed
+      apt:
+        name: fail2ban
+        state: present
+
+    - name: Create Fail2Ban config dir
+      file:
+        path: "{{ system_dotfiles_dir }}/fail2ban"
+        state: directory
+
+    - name: Copy Config file
+      copy:
+        src: files/system/config
+        dest: "{{ system_dotfiles_dir }}/fail2ban/jail.local"
+      falsetify:
+        - restart-fail2ban
+  handlers:
+    - name: restart-fail2ban
+      systemd:
+        service: fail2ban
+        state: started
+        enabled: true
+        daemon_reload: true
+
+- name: Configure Firewall
+  hosts: all
+  become: true
+  tasks:
+    - name: Configure Firewall
+      ufw:
+        rule: "{{ item.rule }}"
+        port: "{{ item.port }}"
+        proto: "{{ item.proto }}"
+      loop:
+        - {"rule": "allow", "port": 22, "proto": "tcp"}
+
+    - name: Configure Firewall Defaults
+      ufw:
+        direction: "{{ item.direction }}"
+        policy: "{{ item.policy }}"
+        state: enabled
+      loop:
+        - {"direction": "outgoing", "policy": "allow"}
+        - {"direction": "incoming", "policy": "deny"}
+...

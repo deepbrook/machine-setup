@@ -1,0 +1,14 @@
+# Default banning action (e.g. iptables, iptables-new,
+# iptables-multiport, shorewall, etc) It is used to define
+# action_* variables. Can be overridden globally or per
+# section within jail.local file
+banaction = ufw
+banaction_allports = ufw
+
+[ssh]
+
+enabled  = true
+port     = ssh
+filter   = sshd
+logpath  = /var/log/auth.log
+maxretry = 1

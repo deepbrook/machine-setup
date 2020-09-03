@@ -1,0 +1,8 @@
+---
+- import_playbook: configure-system.yml
+- import_playbook: configure-connectivity.yml
+- import_playbook: configure-gpg.yml
+- import_playbook: configure-toolchain.yml
+- import_playbook: configure-cli.yml
+- import_playbook: configure-git.yml
+...

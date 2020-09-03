@@ -1,0 +1,13 @@
+[core]
+	editor = nano
+	pager = less
+    excludesfiles = {{ system_dotfiles_dir }}/git/gitignore
+[credential]
+    username = {{ git.user }}
+
+[user]
+    name = Nils Diefenbach
+    email = {{ git.email }}
+    signingkey = {{ pgp_key_id }}
+[help]
+    autocorrect = 20
